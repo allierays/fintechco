@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinTechCo — Money Movement Hub</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #f0efea;
+    --surface: #ffffff;
+    --border: #e2d9cc;
+    --border-light: #ede7dc;
+    --text: #141413;
+    --text-2: #5c4f42;
+    --text-muted: #9a8a7a;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --green-border: #bbf7d0;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --red-border: #fecaca;
+    --orange: #d4a27f;
+    --orange-bg: #faf5ed;
+    --orange-border: #e8c9a0;
+    --blue: #d97757;
+    --blue-bg: #fdf3ee;
+    --blue-border: #f0c4a8;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(20,20,19,0.08), 0 1px 2px rgba(20,20,19,0.04);
+    --shadow-sm: 0 1px 2px rgba(20,20,19,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; max-width: 100%; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; }
+
+  /* ── Header ── */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 48px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-wordmark { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); }
+  .header-sep { width: 1px; height: 14px; background: var(--border); }
+  .header-product { font-size: 13px; font-weight: 500; color: var(--text-2); }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .live-badge { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: var(--green); }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse-green 2s infinite; }
+  @keyframes pulse-green { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .header-time { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .sync-btn-header { display: flex; align-items: center; gap: 6px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.2s; }
+  .sync-btn-header:hover { opacity: 0.85; }
+  .sync-btn-header.loading { opacity: 0.6; pointer-events: none; }
+  .sync-btn-header.success { background: var(--green); }
+
+  /* ── Main ── */
+  .main { padding: 16px 24px 12px; width: 100%; height: calc(100vh - 48px); display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Insight Banner ── */
+  .alert-bar { background: var(--blue-bg); border: 1px solid var(--blue-border); border-left: 4px solid var(--blue); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .alert-left { display: flex; align-items: center; gap: 10px; }
+  .alert-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); flex-shrink: 0; }
+  @keyframes pulse-red { 0%,100%{opacity:1}50%{opacity:0.3} }
+  .alert-text { font-size: 13px; font-weight: 600; color: var(--text); }
+  .alert-text span { color: var(--blue); }
+  .alert-link { font-size: 11px; font-weight: 600; color: var(--blue); white-space: nowrap; cursor: pointer; text-decoration: underline; }
+
+  /* ── Recommendations Dropdown ── */
+  .rec-dropdown { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: var(--surface); border: 1px solid var(--blue-border); border-top: none; border-radius: 0 0 var(--radius-sm) var(--radius-sm); margin-top: -14px; margin-bottom: 14px; }
+  .rec-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.15s; }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-item:hover { background: var(--blue-bg); }
+  .rec-item-left { display: flex; align-items: flex-start; gap: 10px; }
+  .rec-num { font-size: 10px; font-weight: 700; color: var(--blue); background: var(--blue-bg); border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .rec-body { flex: 1; }
+  .rec-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .rec-desc { font-size: 11px; color: var(--text-2); line-height: 1.5; }
+  .rec-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+  .rec-savings { font-size: 13px; font-weight: 700; color: var(--green); white-space: nowrap; }
+  .rec-status { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; background: var(--blue-bg); color: var(--blue); }
+
+  /* ── Narrative label ── */
+  .narrative-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 0 2px; }
+  .narrative-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .narrative-incident { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--red); }
+  .narrative-incident.resolved { color: var(--green); }
+  .narrative-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: pulse-red 1.5s infinite; }
+  .narrative-incident.resolved .narrative-dot { background: var(--green); animation: none; }
+
+  /* ── KPI Cards ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); position: relative; }
+  .kpi-card.incident { border-color: var(--red-border); border-left: 3px solid var(--red); background: var(--red-bg); }
+  .kpi-card.incident.resolved { border-color: var(--green-border); border-left-color: var(--green); background: var(--green-bg); }
+  .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .kpi-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1.1; margin-bottom: 4px; }
+  .kpi-value.incident-large { font-size: 28px; color: var(--red); }
+  .kpi-value.incident-large.green { color: var(--green); font-size: 22px; }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); line-height: 1.3; }
+  .kpi-badge { position: absolute; top: 10px; right: 10px; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; background: var(--red); color: #fff; }
+  .kpi-badge.resolved { background: var(--green); }
+
+  /* ── Rail grid (5, 1 row) ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .section-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+  .section-hint { font-size: 11px; color: var(--text-muted); }
+  .rail-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+  .rail-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; box-shadow: var(--shadow-sm); }
+  .rail-card:hover { border-color: #c5cdd9; box-shadow: var(--shadow); }
+  .rail-card.active { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+  .rail-card.anomaly-rail { border-color: var(--orange-border); border-left: 3px solid var(--orange); background: var(--orange-bg); }
+  .rail-card.anomaly-rail.resolved { border-color: var(--border); border-left-width: 1px; background: var(--surface); }
+  .rail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .rail-name-row { display: flex; align-items: center; gap: 6px; }
+  .rail-icon { font-size: 13px; width: 16px; text-align: center; color: var(--text-2); }
+  .rail-name { font-size: 12px; font-weight: 600; color: var(--text); }
+  .rail-badge { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
+  .badge-online { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-degraded { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
+  .rail-success { font-size: 12px; font-weight: 600; color: var(--green); margin-bottom: 2px; }
+  .rail-bar { height: 3px; background: #e5e7eb; border-radius: 2px; margin-bottom: 8px; overflow: hidden; }
+  .rail-bar-fill { height: 100%; background: var(--green); border-radius: 2px; }
+  .rail-meta { display: flex; gap: 10px; }
+  .rail-cost { font-size: 11px; color: var(--text-2); font-weight: 600; }
+  .rail-speed { font-size: 11px; color: var(--text-muted); }
+
+  /* ── Bottom grid: chart + routing engine ── */
+  .bottom-row { display: grid; grid-template-columns: 1fr 320px; gap: 12px; flex: 1; min-height: 0; }
+
+  /* ── Chart card ── */
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; height: 100%; overflow-y: auto; }
+  .chart-card::-webkit-scrollbar { width: 4px; } .chart-card::-webkit-scrollbar-track { background: transparent; } .chart-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-shrink: 0; }
+  .chart-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+  .chart-legend { display: flex; gap: 14px; align-items: center; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .chart-period { font-size: 11px; color: var(--text-muted); }
+
+  /* ── Rail breakdown table ── */
+  .rail-table { width: 100%; border-collapse: collapse; margin-top: 16px; flex-shrink: 0; }
+  .rail-table th { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+  .rail-table th:first-child { text-align: left; }
+  .rail-table td { font-size: 12px; color: var(--text-2); padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--border-light); font-variant-numeric: tabular-nums; }
+  .rail-table td:first-child { text-align: left; font-weight: 600; color: var(--text); }
+  .rail-table tr:last-child td { border-bottom: none; }
+  .rail-table tr.anomaly-row td { background: var(--red-bg); color: var(--red); font-weight: 600; }
+  .rail-table tr.anomaly-row td:first-child { color: var(--red); }
+  .rail-table tr.anomaly-row.resolved td { background: var(--green-bg); color: var(--green); }
+  .rail-table tr.anomaly-row.resolved td:first-child { color: var(--green); }
+  .trend-up { color: var(--red); font-size: 11px; }
+  .trend-ok { color: var(--green); font-size: 11px; }
+  .trend-neutral { color: var(--text-muted); font-size: 11px; }
+  .table-divider { height: 1px; background: var(--border); margin: 12px 0 0; }
+
+  /* ── ROI Row (post-sync) ── */
+  .roi-row { display: none; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .roi-row.visible { display: grid; }
+  .roi-card { background: var(--surface); border: 1px solid var(--green-border); border-left: 3px solid var(--green); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+  .roi-value { font-size: 28px; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; line-height: 1.1; margin-bottom: 4px; }
+  .roi-label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+  .roi-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── AI Routing Engine ── */
+  .health-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow-y: auto; height: 100%; }
+  .health-header { padding: 12px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; }
+  .health-title { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+  .health-model { font-size: 11px; color: var(--text-muted); }
+  .health-body { padding: 14px 16px; }
+  .health-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .health-metric { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border-light); }
+  .health-metric:last-of-type { border-bottom: none; }
+  .health-metric-label { font-size: 12px; color: var(--text-2); }
+  .health-metric-value { font-size: 13px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .health-metric-value.green { color: var(--green); }
+  .feature-store-box { background: var(--red-bg); border: 1px solid var(--red-border); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 12px; }
+  .feature-store-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .feature-store-label { font-size: 12px; color: var(--text-2); }
+  .feature-store-stale { font-size: 12px; font-weight: 600; color: var(--red); }
+  .feature-store-warn { font-size: 11px; color: var(--red); }
+  .feature-store-box.ok { background: var(--green-bg); border-color: var(--green-border); }
+  .feature-store-box.ok .feature-store-stale { color: var(--green); }
+  .feature-store-box.ok .feature-store-warn { color: var(--green); }
+  .sync-btn-main { width: 100%; padding: 11px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.2s; margin-bottom: 12px; }
+  .sync-btn-main:hover { opacity: 0.85; }
+  .sync-btn-main.loading { opacity: 0.6; pointer-events: none; }
+  .sync-btn-main.success { background: var(--green); }
+  .divider { height: 1px; background: var(--border-light); margin: 10px 0; }
+
+  /* ── Tooltips ── */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #141413;
+    color: #f0efea;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.6;
+    padding: 8px 12px;
+    border-radius: 6px;
+    width: 230px;
+    white-space: normal;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  [data-tip]:hover::after { opacity: 1; }
+  [data-tip].tip-left::after { left: auto; right: 0; transform: none; }
+  [data-tip].tip-right::after { left: 0; transform: none; }
+
+  /* ── Claude Code Callout ── */
+  .claude-callout { display: none; background: #0f1117; border: 1px solid #2d3748; border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace; }
+  .claude-callout.visible { display: block; }
+  .claude-callout-header { font-size: 10px; font-weight: 600; color: #e2e8f0; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .claude-dot { width: 8px; height: 8px; border-radius: 50%; background: #48bb78; flex-shrink: 0; }
+  .claude-line { font-size: 11px; line-height: 1.7; color: #a0aec0; }
+  .claude-line .hl { color: #f6e05e; }
+  .claude-line .ok { color: #48bb78; }
+  .claude-line .file { color: #63b3ed; }
+  .claude-line .pr { color: #b794f4; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <span class="header-wordmark">FinTechCo</span>
+    <div class="header-sep"></div>
+    <span class="header-product">Money Movement Hub</span>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> Live</div>
+    <span class="header-time" id="clock">—</span>
+    <button class="sync-btn-header" id="sync-btn-header" onclick="syncRoutingModel()">↻ Sync Routing Model</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="alert-bar" id="alert-bar">
+    <div class="alert-left">
+      <div class="alert-dot" id="alert-dot"></div>
+      <div class="alert-text" id="alert-text">
+        <strong>3 cost-saving opportunities identified this week</strong> — FedNow underutilized for mid-size B2B transfers · <span>est. $82K/month</span> in recoverable savings · AI routing live across all rails
+      </div>
+    </div>
+    <div class="alert-link" id="alert-link" onclick="toggleRecs()">View recommendations ▾</div>
+  </div>
+
+  <div class="rec-dropdown" id="rec-dropdown">
+    <div class="rec-item">
+      <div class="rec-item-left">
+        <div class="rec-num">1</div>
+        <div class="rec-body">
+          <div class="rec-title">FedNow underutilized for mid-size B2B transfers</div>
+          <div class="rec-desc">12% of $1K–$5K B2B payments still routing via ACH. FedNow is faster and only $0.20 more — worth it for same-day settlement.</div>
+        </div>
+      </div>
+      <div class="rec-right">
+        <div class="rec-savings">$82K/mo</div>
+        <div class="rec-status" id="rec-status-1">Review pending</div>
+      </div>
+    </div>
+    <div class="rec-item">
+      <div class="rec-item-left">
+        <div class="rec-num">2</div>
+        <div class="rec-body">
+          <div class="rec-title">Wire fallback during RTP degradation windows</div>
+          <div class="rec-desc">During RTP slowdowns, 8% of eligible transfers fall back to Wire ($25) instead of rerouting to FedNow ($0.45). Auto-reroute logic needed.</div>
+        </div>
+      </div>
+      <div class="rec-right">
+        <div class="rec-savings">$34K/mo</div>
+        <div class="rec-status">Review pending</div>
+      </div>
+    </div>
+    <div class="rec-item">
+      <div class="rec-item-left">
+        <div class="rec-num">3</div>
+        <div class="rec-body">
+          <div class="rec-title">Friday payroll batch timing — Wire over-selected</div>
+          <div class="rec-desc">Wire usage spikes 23% on Friday afternoons for payroll runs. Where same-day settlement isn't required, batching to ACH saves $24.75/tx.</div>
+        </div>
+      </div>
+      <div class="rec-right">
+        <div class="rec-savings">$17K/mo</div>
+        <div class="rec-status">Review pending</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="narrative-row">
+    <span class="narrative-label">System Health</span>
+    <div class="narrative-incident resolved" id="narrative-incident">
+      <div class="narrative-dot" style="background:var(--green);animation:none"></div>
+      ✓ All Rails Optimal · AI Routing Active
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label" data-tip="Total number of payment transactions routed through the AI system in the last 24 hours, across all rails.">Payments (24h)</div>
+      <div class="kpi-value">4.3M</div>
+      <div class="kpi-sub">across all rails</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label" data-tip="The average fee paid per transaction to move money across payment rails. Without AI, rule-based routing costs $0.74/tx — AI cuts that by 70%.">Avg Routing Cost</div>
+      <div class="kpi-value">$0.22</div>
+      <div class="kpi-sub">per transaction · $0.74 rules-based</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label" data-tip="How much less we paid this month vs. a traditional rules-based system that would default expensive rails like Wire for large transfers.">Cost Savings vs. Rules</div>
+      <div class="kpi-value" id="kpi-savings">$2.02M</div>
+      <div class="kpi-sub">vs. rule-based routing (30 days)</div>
+    </div>
+    <div class="kpi-card" style="border-left:3px solid var(--green);background:var(--green-bg);">
+      <div class="kpi-label" data-tip="Out of every 100 routing decisions the AI makes, 99 pick the cheapest available rail for that transaction. The remaining 0.9% are the opportunities Claude is surfacing.">Cost-Optimal Decisions</div>
+      <div class="kpi-value" id="kpi-optimal" style="color:var(--green)">99.1%</div>
+      <div class="kpi-sub">of all routing decisions today</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">Rail Status</div>
+    <div class="section-hint">Click to filter</div>
+  </div>
+  <div class="rail-grid">
+    <div class="rail-card" onclick="highlightRail('Zelle', this)">
+      <div class="rail-header">
+        <div class="rail-name-row"><span class="rail-icon"><i class="fa-solid fa-bolt"></i></span><span class="rail-name" data-tip="Free bank-to-bank transfers. Consumer-focused, settles in under 2 seconds. No fee per transaction — AI prioritizes this wherever eligible.">Zelle</span></div>
+        <span class="rail-badge badge-online">Online</span>
+      </div>
+      <div class="rail-success">99.8% success</div>
+      <div class="rail-bar"><div class="rail-bar-fill" style="width:99.8%"></div></div>
+      <div class="rail-meta"><span class="rail-cost">Free</span><span class="rail-speed">&lt;2s</span></div>
+    </div>
+    <div class="rail-card" onclick="highlightRail('RTP', this)">
+      <div class="rail-header">
+        <div class="rail-name-row"><span class="rail-icon"><i class="fa-solid fa-right-left"></i></span><span class="rail-name" data-tip="Real-Time Payments network. Near-instant transfers ($0.50/tx), settles in under 10 seconds. Currently degraded — AI is routing around it automatically.">RTP</span></div>
+        <span class="rail-badge badge-degraded">Degraded</span>
+      </div>
+      <div class="rail-success" style="color:var(--orange)">99.6% success</div>
+      <div class="rail-bar"><div class="rail-bar-fill" style="width:99.6%;background:var(--orange)"></div></div>
+      <div class="rail-meta"><span class="rail-cost">$0.50</span><span class="rail-speed">&lt;10s</span></div>
+    </div>
+    <div class="rail-card" onclick="highlightRail('FedNow', this)">
+      <div class="rail-header">
+        <div class="rail-name-row"><span class="rail-icon"><i class="fa-solid fa-landmark"></i></span><span class="rail-name" data-tip="The Federal Reserve's instant payment rail. $0.45/tx, settles in under 10 seconds. Newer than RTP — Claude identified it's underutilized for B2B transfers.">FedNow</span></div>
+        <span class="rail-badge badge-online">Online</span>
+      </div>
+      <div class="rail-success">99.4% success</div>
+      <div class="rail-bar"><div class="rail-bar-fill" style="width:99.4%"></div></div>
+      <div class="rail-meta"><span class="rail-cost">$0.45</span><span class="rail-speed">&lt;10s</span></div>
+    </div>
+    <div class="rail-card" onclick="highlightRail('ACH', this)">
+      <div class="rail-header">
+        <div class="rail-name-row"><span class="rail-icon"><i class="fa-solid fa-rotate"></i></span><span class="rail-name" data-tip="Automated Clearing House — the workhorse of B2B payments. Cheap at $0.25/tx but settles next day, not instantly. Good for payroll and recurring billing.">ACH</span></div>
+        <span class="rail-badge badge-online">Online</span>
+      </div>
+      <div class="rail-success">99.2% success</div>
+      <div class="rail-bar"><div class="rail-bar-fill" style="width:99.2%"></div></div>
+      <div class="rail-meta"><span class="rail-cost">$0.25</span><span class="rail-speed">next day</span></div>
+    </div>
+    <div class="rail-card" id="wire-rail-card" onclick="highlightRail('Wire', this)">
+      <div class="rail-header">
+        <div class="rail-name-row"><span class="rail-icon"><i class="fa-solid fa-money-check-dollar"></i></span><span class="rail-name" data-tip="Traditional bank wire transfer. $25/tx and takes 2–4 hours. The most expensive rail by far — AI routes around it unless there's no other option. Only 847 of 4.3M transactions went here.">Wire</span></div>
+        <span class="rail-badge badge-online">Online</span>
+      </div>
+      <div class="rail-success">99.2% success</div>
+      <div class="rail-bar"><div class="rail-bar-fill" style="width:99.2%"></div></div>
+      <div class="rail-meta"><span class="rail-cost">$25.00</span><span class="rail-speed">2–4h</span></div>
+    </div>
+  </div>
+
+
+  <!-- Chart + AI Routing Engine -->
+  <div class="bottom-row">
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Payment Volume &amp; Avg Cost — 24H</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span data-tip="txns = transactions. This line shows how many payments moved through the system each hour.">Volume (txns)</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Avg Cost / txn</div>
+          </div>
+          <div class="chart-period">Hourly · UTC</div>
+        </div>
+      </div>
+      <canvas id="volumeChart" style="max-height:180px"></canvas>
+
+      <!-- Rail cost breakdown table -->
+      <div class="table-divider"></div>
+      <table class="rail-table" id="rail-table">
+        <thead>
+          <tr>
+            <th>Rail</th>
+            <th data-tip="txns = transactions. Total number of payments routed through this rail in the last 24 hours.">24h Txns</th>
+            <th>Avg Cost</th>
+            <th>Total Cost</th>
+            <th data-tip="Monthly savings attributed to this rail — how much AI routing via this rail saves vs. a rules-based system that would default to Wire.">AI Impact</th>
+            <th data-tip="Direction of this rail's transaction volume over the past 24 hours.">Trend</th>
+          </tr>
+        </thead>
+        <tbody id="rail-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="health-card">
+      <div class="health-header">
+        <div class="health-title">AI Routing Engine</div>
+        <div class="health-model tip-left" id="health-model-version" data-tip="The version of the AI model currently making routing decisions. Updates automatically when new training data is available.">routing-model-v3.1.2</div>
+      </div>
+      <div class="health-body">
+
+        <div class="health-section-label tip-left" data-tip="The dataset the AI model pulls from to make routing decisions — transaction history, rail performance, cost data. Has to stay fresh or the model makes stale decisions.">Feature Store</div>
+        <div class="feature-store-box ok" id="feature-store-box">
+          <div class="feature-store-row">
+            <span class="feature-store-label">Last refreshed</span>
+            <span class="feature-store-stale" id="fs-stale" style="color:var(--green)">Just now ✓</span>
+          </div>
+          <div class="feature-store-warn" id="fs-warn" style="color:var(--green)">Score weights current · routing optimized</div>
+        </div>
+
+
+        <button class="sync-btn-main" id="sync-btn-main" onclick="syncRoutingModel()">↻ Sync Routing Model</button>
+
+        <div class="divider"></div>
+        <div class="health-section-label">Performance</div>
+        <div class="health-metric">
+          <span class="health-metric-label tip-left" data-tip="% of routing decisions where AI picked the cheapest available rail. 99.1% means it's nearly perfect — the remaining 0.9% are the opportunities being surfaced.">Cost-Optimal Decisions</span>
+          <span class="health-metric-value green" id="hm-optimal">99.1%</span>
+        </div>
+        <div class="health-metric">
+          <span class="health-metric-label tip-left" data-tip="The average fee paid each time the AI routes a transaction. Reflects the real-time blended cost across all rails.">Avg Cost / Decision</span>
+          <span class="health-metric-value green" id="hm-cost">$0.22</span>
+        </div>
+        <div class="health-metric" style="border-bottom:none">
+          <span class="health-metric-label tip-left" data-tip="% of transactions where AI found a cheaper route than the default rule-based path would have taken.">Cost Savings Rate</span>
+          <span class="health-metric-value green" id="hm-savings-rate">87.3%</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// Clock
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2,'0');
+  const m = String(now.getUTCMinutes()).padStart(2,'0');
+  const s = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+let resolved = false;
+
+function syncRoutingModel() {
+  if (resolved) return;
+  resolved = true;
+
+  const btns = [document.getElementById('sync-btn-header'), document.getElementById('sync-btn-main')];
+  btns.forEach(b => b.classList.add('loading'));
+
+  const steps = ['Connecting to routing service…', 'Pulling feature store…'];
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i < steps.length) {
+      btns.forEach(b => b.textContent = '↻ ' + steps[i++]);
+    }
+  }, 500);
+
+  setTimeout(() => {
+    clearInterval(interval);
+
+    // Error state
+    btns.forEach(b => {
+      b.classList.remove('loading');
+      b.style.background = 'var(--red)';
+      b.textContent = '⚠ Sync failed';
+    });
+
+    // Error banner
+    const alertBar = document.getElementById('alert-bar');
+    alertBar.style.background = 'var(--red-bg)';
+    alertBar.style.borderColor = 'var(--red-border)';
+    alertBar.style.borderLeftColor = 'var(--red)';
+    document.getElementById('alert-dot').style.background = 'var(--red)';
+    document.getElementById('alert-text').innerHTML = '<strong>Sync failed</strong> — routing model update could not complete · <span style="color:var(--red)">Cloudflare 503 · upstream timeout</span>';
+    document.getElementById('alert-link').style.display = 'none';
+
+    // Feature store warning
+    const fsBox = document.getElementById('feature-store-box');
+    fsBox.style.background = 'var(--red-bg)';
+    fsBox.style.borderColor = 'var(--red-border)';
+    document.getElementById('fs-stale').style.color = 'var(--red)';
+    document.getElementById('fs-stale').textContent = 'Sync failed ⚠';
+    document.getElementById('fs-warn').style.color = 'var(--red)';
+    document.getElementById('fs-warn').textContent = 'Could not reach routing service — weights may be stale';
+  }, 1200);
+}
+
+function toggleRecs() {
+  const dropdown = document.getElementById('rec-dropdown');
+  const link = document.getElementById('alert-link');
+  const isOpen = dropdown.style.maxHeight && dropdown.style.maxHeight !== '0px';
+  if (isOpen) {
+    dropdown.style.maxHeight = dropdown.scrollHeight + 'px';
+    requestAnimationFrame(() => { dropdown.style.maxHeight = '0px'; });
+    link.textContent = 'View recommendations ▾';
+  } else {
+    dropdown.style.maxHeight = dropdown.scrollHeight + 'px';
+    link.textContent = 'Hide recommendations ▴';
+  }
+}
+
+// Volume + Cost line chart
+const hours = [];
+for (let i = 23; i >= 0; i--) {
+  const d = new Date(Date.now() - i * 3600000);
+  hours.push(d.getUTCHours() + ':00');
+}
+const volumeData = [158,165,170,172,168,162,175,185,193,200,205,198,195,188,182,178,172,168,175,183,190,195,200,205].map(v => v * 1000);
+const costData   = [0.24,0.23,0.23,0.22,0.23,0.24,0.23,0.22,0.21,0.22,0.22,0.23,0.24,0.23,0.22,0.22,0.23,0.22,0.22,0.21,0.22,0.22,0.23,0.22];
+
+const volCtx = document.getElementById('volumeChart').getContext('2d');
+new Chart(volCtx, {
+  type: 'line',
+  data: {
+    labels: hours,
+    datasets: [
+      { label: 'Volume', data: volumeData, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.06)', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true, yAxisID: 'y' },
+      { label: 'Avg Cost $', data: costData, borderColor: '#ef4444', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: 0.2, fill: false, yAxisID: 'y1' }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: { legend: { display: false }, tooltip: { bodyFont: { family: 'Inter', size: 11 } } },
+    scales: {
+      x: { ticks: { font: { family:'Inter', size:10 }, color:'#9ca3af', maxTicksLimit: 8, maxRotation:0 }, grid: { color:'#f0f2f5' }, border: { display:false } },
+      y: { position:'left', ticks: { font:{family:'Inter',size:10}, color:'#9ca3af', callback: v=>(v/1000).toFixed(0)+'K' }, grid:{color:'#f0f2f5'}, border:{display:false} },
+      y1: { position:'right', min: 0.18, max: 0.30, ticks: { font:{family:'Inter',size:10}, color:'#9ca3af', callback: v=>'$'+v.toFixed(2) }, grid:{drawOnChartArea:false}, border:{display:false} }
+    }
+  }
+});
+
+// Rail breakdown table
+const railData = [
+  { rail: 'Zelle',  txns: '1,548,000', avgCost: 'Free',   total: '$0',         aiImpact: '↓ Cost floor',  trend: 'ok',      trendLabel: '→ stable' },
+  { rail: 'ACH',    txns: '1,720,000', avgCost: '$0.25',  total: '$430,000',   aiImpact: '+$892K/mo',     trend: 'ok',      trendLabel: '→ stable' },
+  { rail: 'RTP',    txns: '559,000',   avgCost: '$0.50',  total: '$279,500',   aiImpact: '+$1.08M/mo',    trend: 'neutral', trendLabel: '↓ –3%' },
+  { rail: 'FedNow', txns: '472,153',   avgCost: '$0.45',  total: '$212,500',   aiImpact: '+$134K/mo',     trend: 'ok',      trendLabel: '→ stable' },
+  { rail: 'Wire',   txns: '847',       avgCost: '$25.00', total: '$21,175',    aiImpact: 'AI-limited ✓',  trend: 'ok',      trendLabel: '↓ 97% vs rules' },
+];
+
+function renderTable(highlightRailName) {
+  const tbody = document.getElementById('rail-tbody');
+  tbody.innerHTML = railData.map(r => {
+    const isHighlighted = highlightRailName && r.rail.toLowerCase().startsWith(highlightRailName.toLowerCase());
+    const style = isHighlighted ? 'background:#fdf3ee' : '';
+    const aiImpactStyle = r.aiImpact.includes('saved') ? 'color:var(--green);font-weight:600' : r.aiImpact.includes('✓') ? 'color:var(--green);font-weight:600' : 'color:var(--text-muted)';
+    return `<tr style="${style}">
+      <td>${r.rail}</td>
+      <td>${r.txns}</td>
+      <td>${r.avgCost}</td>
+      <td>${r.total}</td>
+      <td><span style="${aiImpactStyle}">${r.aiImpact}</span></td>
+      <td class="trend-${r.trend}">${r.trendLabel}</td>
+    </tr>`;
+  }).join('');
+}
+renderTable(null);
+
+let activeRail = null;
+function highlightRail(name, el) {
+  if (activeRail === name) {
+    activeRail = null;
+    document.querySelectorAll('.rail-card').forEach(c => c.classList.remove('active'));
+  } else {
+    activeRail = name;
+    document.querySelectorAll('.rail-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+  renderTable(activeRail);
+}
+
+</script>
+</body>
+</html>
