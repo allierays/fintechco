@@ -32,3 +32,17 @@ def test_mid_range_balanced():
     """Mid-range transfers should still avoid Wire."""
     best = pick_best_rail(RAILS, amount=2_000)
     assert best["id"] != "wire"
+
+
+def test_large_transfers_do_not_select_wire():
+    """Large transfers should not select Wire due to high cost and lower success rate."""
+    wire_score = score_rail(WIRE, amount=100_000)
+    rtp_score = score_rail(RTP, amount=100_000)
+    assert rtp_score > wire_score, "Wire should not be selected for large transfers"
+
+
+def test_small_transfers_prioritize_cost():
+    """Small transfers should prioritize cost over success rate."""
+    wire_score = score_rail(WIRE, amount=100)
+    rtp_score = score_rail(RTP, amount=100)
+    assert wire_score < rtp_score, "Cheaper rail should be selected for small transfers"
