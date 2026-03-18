@@ -472,6 +472,8 @@ updateClock();
 
 let resolved = false;
 
+const SYNC_API = 'https://k5lxx0rbsl.execute-api.us-east-1.amazonaws.com/prod/sync';
+
 function syncRoutingModel() {
   if (resolved) return;
   resolved = true;
@@ -487,34 +489,40 @@ function syncRoutingModel() {
     }
   }, 500);
 
-  setTimeout(() => {
-    clearInterval(interval);
-
-    // Error state
-    btns.forEach(b => {
-      b.classList.remove('loading');
-      b.style.background = 'var(--red)';
-      b.textContent = '⚠ Sync failed';
+  fetch(SYNC_API, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      clearInterval(interval);
+      showSyncError(btns, data.message || 'Cloudflare 503 · upstream timeout');
+    })
+    .catch(() => {
+      clearInterval(interval);
+      showSyncError(btns, 'Cloudflare 503 · upstream timeout');
     });
+}
 
-    // Error banner
-    const alertBar = document.getElementById('alert-bar');
-    alertBar.style.background = 'var(--red-bg)';
-    alertBar.style.borderColor = 'var(--red-border)';
-    alertBar.style.borderLeftColor = 'var(--red)';
-    document.getElementById('alert-dot').style.background = 'var(--red)';
-    document.getElementById('alert-text').innerHTML = '<strong>Sync failed</strong> — routing model update could not complete · <span style="color:var(--red)">Cloudflare 503 · upstream timeout</span>';
-    document.getElementById('alert-link').style.display = 'none';
+function showSyncError(btns, message) {
+  btns.forEach(b => {
+    b.classList.remove('loading');
+    b.style.background = 'var(--red)';
+    b.textContent = '⚠ Sync failed';
+  });
 
-    // Feature store warning
-    const fsBox = document.getElementById('feature-store-box');
-    fsBox.style.background = 'var(--red-bg)';
-    fsBox.style.borderColor = 'var(--red-border)';
-    document.getElementById('fs-stale').style.color = 'var(--red)';
-    document.getElementById('fs-stale').textContent = 'Sync failed ⚠';
-    document.getElementById('fs-warn').style.color = 'var(--red)';
-    document.getElementById('fs-warn').textContent = 'Could not reach routing service — weights may be stale';
-  }, 1200);
+  const alertBar = document.getElementById('alert-bar');
+  alertBar.style.background = 'var(--red-bg)';
+  alertBar.style.borderColor = 'var(--red-border)';
+  alertBar.style.borderLeftColor = 'var(--red)';
+  document.getElementById('alert-dot').style.background = 'var(--red)';
+  document.getElementById('alert-text').innerHTML = '<strong>Sync failed</strong> — routing model update could not complete · <span style="color:var(--red)">' + message + '</span>';
+  document.getElementById('alert-link').style.display = 'none';
+
+  const fsBox = document.getElementById('feature-store-box');
+  fsBox.style.background = 'var(--red-bg)';
+  fsBox.style.borderColor = 'var(--red-border)';
+  document.getElementById('fs-stale').style.color = 'var(--red)';
+  document.getElementById('fs-stale').textContent = 'Sync failed ⚠';
+  document.getElementById('fs-warn').style.color = 'var(--red)';
+  document.getElementById('fs-warn').textContent = 'Could not reach routing service — weights may be stale';
 }
 
 function toggleRecs() {
