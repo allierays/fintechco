@@ -1,24 +1,26 @@
 """
 AI routing model — scores payment rails and selects the optimal route.
 
-BUG: score_rail ignores transfer amount. For large transfers ($10k+),
-success_rate should dominate (weight 0.8). For small transfers (<$500),
-cost should dominate (weight 0.8). The hardcoded 0.5/0.5 split causes
-Wire to win on large transfers instead of RTP, spiking avg_cost in CloudWatch.
+Weights cost vs. success rate dynamically based on transfer amount:
+- Large transfers ($10k+): prioritize success rate to avoid expensive Wire fallback
+- Small transfers (<$500): prioritize cost to keep per-txn fees minimal
+- Mid-range: balanced 50/50 weighting
 """
 
 import random
 
 
 def score_rail(rail: dict, amount: float) -> float:
-    # BUG: ignores amount — always weights cost equally regardless of transfer size
-    # For large transfers ($10k+), success_rate should dominate (0.8)
-    # For small transfers (<$500), cost should dominate (0.8)
-    cost_weight = 0.5  # hardcoded — should be dynamic based on amount
-    success_weight = 0.5
+    # Dynamic weighting based on transfer amount
+    if amount >= 10_000:
+        cost_weight = 0.2       # large transfers: prioritize reliability over cost
+    elif amount < 500:
+        cost_weight = 0.8       # small transfers: prioritize cheapest rail
+    else:
+        cost_weight = 0.5       # mid-range: balanced
+    success_weight = 1 - cost_weight
     cost_score = 1 / (rail["cost_usd"] + 0.01)
     return (success_weight * rail["success_rate"]) + (cost_weight * cost_score)
-    # Result: Wire often wins on large transfers instead of RTP — CloudWatch sees avg_cost spike
 
 
 def pick_best_rail(rails: list[dict], amount: float) -> dict:
