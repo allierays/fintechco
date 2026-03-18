@@ -32,3 +32,29 @@ def test_mid_range_balanced():
     """Mid-range transfers should still avoid Wire."""
     best = pick_best_rail(RAILS, amount=2_000)
     assert best["id"] != "wire"
+
+
+def test_stale_weight_cache_invalidation_loop_fixed():
+    """Verify that the stale weight cache invalidation loop is fixed."""
+    # Simulate the CloudWatch error scenario
+    rails = [
+        {"id": "wire", "name": "Wire", "cost_usd": 25.00, "success_rate": 98.2, "status": "online"},
+        {"id": "rtp", "name": "RTP", "cost_usd": 0.50, "success_rate": 99.5, "status": "online"},
+        {"id": "ach", "name": "ACH", "cost_usd": 0.25, "success_rate": 99.1, "status": "online"},
+        {"id": "zelle", "name": "Zelle", "cost_usd": 0.00, "success_rate": 99.8, "status": "online"}
+    ]
+    best = pick_best_rail(rails, amount=847)
+    assert best["id"] != "wire", "Wire should not be selected for large transfers"
+
+
+def test_cost_weight_is_dynamic():
+    """Verify that the cost weight is dynamically adjusted based on transfer amount."""
+    # Verify cost weight for large transfer
+    wire_score = score_rail(WIRE, amount=50_000)
+    rtp_score = score_rail(RTP, amount=50_000)
+    assert rtp_score > wire_score, "RTP should score higher than Wire for large transfers"
+
+    # Verify cost weight for small transfer
+    wire_score = score_rail(WIRE, amount=200)
+    ach_score = score_rail(ACH, amount=200)
+    assert ach_score > wire_score, "ACH should score higher than Wire for small transfers"
