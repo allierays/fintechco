@@ -32,3 +32,15 @@ def test_mid_range_balanced():
     """Mid-range transfers should still avoid Wire."""
     best = pick_best_rail(RAILS, amount=2_000)
     assert best["id"] != "wire"
+
+
+def test_small_transfer_prioritizes_cost():
+    """$100 transfer should prioritize cost over success rate."""
+    best = pick_best_rail(RAILS, amount=100)
+    assert best["id"] in ["ach", "zelle"], f"Small transfer routed to {best['name']} (${best['cost_usd']}/tx)"
+
+
+def test_large_transfer_prioritizes_success_rate():
+    """$25000 transfer should prioritize success rate over cost."""
+    best = pick_best_rail(RAILS, amount=25_000)
+    assert best["id"] in ["rtp", "zelle"], f"Large transfer routed to {best['name']} (${best['cost_usd']}/tx)"
