@@ -32,3 +32,15 @@ def test_mid_range_balanced():
     """Mid-range transfers should still avoid Wire."""
     best = pick_best_rail(RAILS, amount=2_000)
     assert best["id"] != "wire"
+
+
+def test_large_transfer_prefers_rtp_over_wire():
+    """Large transfers should prefer RTP over Wire."""
+    best = pick_best_rail(RAILS, amount=20_000)
+    assert best["id"] == "rtp"
+
+
+def test_small_transfer_prefers_cost_over_success_rate():
+    """Small transfers should prefer cost over success rate."""
+    best = pick_best_rail(RAILS, amount=100)
+    assert best["id"] == "ach"
