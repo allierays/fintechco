@@ -32,3 +32,14 @@ def test_mid_range_balanced():
     """Mid-range transfers should still avoid Wire."""
     best = pick_best_rail(RAILS, amount=2_000)
     assert best["id"] != "wire"
+
+
+def test_fix_large_transfer_cost_spike():
+    """Large transfers ($847k) should not spike avg_cost per transaction."""
+    rails = [
+        {"id": "wire", "name": "Wire", "cost_usd": 1.91, "success_rate": 98.2, "status": "online"},
+        {"id": "rtp", "name": "RTP", "cost_usd": 0.50, "success_rate": 99.5, "status": "online"},
+    ]
+    best = pick_best_rail(rails, amount=847_000)
+    assert best["id"] == "rtp", "Large transfer should pick RTP, not Wire"
+    assert best["cost_usd"] < 1.00, "Large transfer cost should be less than $1"
