@@ -8,18 +8,15 @@ ACH = {"id": "ach", "name": "ACH", "cost_usd": 0.25, "success_rate": 99.1, "stat
 ZELLE = {"id": "zelle", "name": "Zelle", "cost_usd": 0.00, "success_rate": 99.8, "status": "online"}
 RAILS = [ZELLE, RTP, ACH, WIRE]
 
-
 def test_large_transfer_avoids_wire():
     """$50k transfer should pick RTP over Wire."""
     best = pick_best_rail(RAILS, amount=50_000)
     assert best["id"] != "wire", f"Large transfer routed to Wire (${best['cost_usd']}/tx)"
 
-
 def test_small_transfer_picks_cheapest():
     """$20 transfer should pick cheapest rail."""
     best = pick_best_rail(RAILS, amount=20)
     assert best["cost_usd"] < 1.00, f"Small transfer routed to {best['name']} (${best['cost_usd']}/tx)"
-
 
 def test_wire_scores_lower_than_rtp_for_large():
     """Wire should score lower than RTP for large transfers."""
@@ -27,8 +24,16 @@ def test_wire_scores_lower_than_rtp_for_large():
     rtp_score = score_rail(RTP, amount=50_000)
     assert rtp_score > wire_score, f"Wire ({wire_score:.2f}) scored higher than RTP ({rtp_score:.2f}) for $50k"
 
-
 def test_mid_range_balanced():
     """Mid-range transfers should still avoid Wire."""
     best = pick_best_rail(RAILS, amount=2_000)
     assert best["id"] != "wire"
+
+def test_cost_weight_adjusts_for_transfer_size():
+    """Cost weight should decrease and success rate weight should increase for large transfers."""
+    large_wire_score = score_rail(WIRE, amount=50_000)
+    large_rtp_score = score_rail(RTP, amount=50_000)
+    small_wire_score = score_rail(WIRE, amount=200)
+    small_rtp_score = score_rail(RTP, amount=200)
+    assert large_rtp_score > large_wire_score
+    assert small_wire_score > small_rtp_score
