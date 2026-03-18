@@ -11,14 +11,17 @@ import random
 
 
 def score_rail(rail: dict, amount: float) -> float:
-    # BUG: ignores amount — always weights cost equally regardless of transfer size
-    # For large transfers ($10k+), success_rate should dominate (0.8)
-    # For small transfers (<$500), cost should dominate (0.8)
-    cost_weight = 0.5  # hardcoded — should be dynamic based on amount
-    success_weight = 0.5
+    if amount >= 10_000:
+        cost_weight = 0.2
+        success_weight = 0.8
+    elif amount < 500:
+        cost_weight = 0.8
+        success_weight = 0.2
+    else:
+        cost_weight = 0.5
+        success_weight = 0.5
     cost_score = 1 / (rail["cost_usd"] + 0.01)
     return (success_weight * rail["success_rate"]) + (cost_weight * cost_score)
-    # Result: Wire often wins on large transfers instead of RTP — CloudWatch sees avg_cost spike
 
 
 def pick_best_rail(rails: list[dict], amount: float) -> dict:
