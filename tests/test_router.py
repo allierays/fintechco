@@ -32,3 +32,13 @@ def test_mid_range_balanced():
     """Mid-range transfers should still avoid Wire."""
     best = pick_best_rail(RAILS, amount=2_000)
     assert best["id"] != "wire"
+
+
+def test_wire_over_selected_for_large_transfers():
+    """Verify that the bug causing Wire to be over-selected for large transfers is fixed."""
+    rails = [
+        {"id": "wire", "name": "Wire", "cost_usd": 25.00, "success_rate": 98.2, "status": "online"},
+        {"id": "rtp", "name": "RTP", "cost_usd": 0.50, "success_rate": 99.5, "status": "online"},
+    ]
+    best = pick_best_rail(rails, amount=50_000)
+    assert best["id"] != "wire", "Wire should not be selected for large transfers"
