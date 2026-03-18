@@ -1,35 +1,35 @@
 """
 AI routing model — scores payment rails and selects the optimal route.
-
-BUG: score_rail ignores transfer amount. For large transfers ($10k+),
-success_rate should dominate (weight 0.8). For small transfers (<$500),
-cost should dominate (weight 0.8). The hardcoded 0.5/0.5 split causes
-Wire to win on large transfers instead of RTP, spiking avg_cost in CloudWatch.
 """
 
 import random
 
-
 def score_rail(rail: dict, amount: float) -> float:
-    # BUG: ignores amount — always weights cost equally regardless of transfer size
-    # For large transfers ($10k+), success_rate should dominate (0.8)
-    # For small transfers (<$500), cost should dominate (0.8)
-    cost_weight = 0.5  # hardcoded — should be dynamic based on amount
-    success_weight = 0.5
+    """
+    Scores a payment rail based on its cost and success rate.
+    The weight of cost vs success rate is dynamically adjusted based on the transfer amount.
+    """
+    if amount >= 10000:
+        cost_weight = 0.2
+        success_weight = 0.8
+    elif amount < 500:
+        cost_weight = 0.8
+        success_weight = 0.2
+    else:
+        cost_weight = 0.5
+        success_weight = 0.5
+
     cost_score = 1 / (rail["cost_usd"] + 0.01)
     return (success_weight * rail["success_rate"]) + (cost_weight * cost_score)
-    # Result: Wire often wins on large transfers instead of RTP — CloudWatch sees avg_cost spike
-
 
 def pick_best_rail(rails: list[dict], amount: float) -> dict:
-    """Score all available rails and return the best one."""
+    """Scores all available rails and returns the best one."""
     online_rails = [r for r in rails if r["status"] == "online"]
     if not online_rails:
         online_rails = rails  # fallback
 
     scored = sorted(online_rails, key=lambda r: score_rail(r, amount), reverse=True)
     return scored[0]
-
 
 def compute_routing_accuracy(rail_weights: dict) -> float:
     """Estimate routing model accuracy from observed success rates."""
@@ -38,7 +38,6 @@ def compute_routing_accuracy(rail_weights: dict) -> float:
     avg_weight = sum(rail_weights.values()) / len(rail_weights)
     accuracy = 90.0 + (avg_weight * 6.0) + random.uniform(-0.3, 0.3)
     return round(min(99.0, accuracy), 1)
-
 
 def compute_cost_savings_rate(rail_weights: dict) -> float:
     """Estimate % of decisions that beat naive (always-cheapest) routing."""
